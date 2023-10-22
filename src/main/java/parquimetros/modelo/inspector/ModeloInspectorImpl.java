@@ -1,30 +1,10 @@
 package parquimetros.modelo.inspector;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Objects;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import parquimetros.modelo.ModeloImpl;
 import parquimetros.modelo.beans.*;
-import parquimetros.modelo.inspector.dao.DAOParquimetro;
-import parquimetros.modelo.inspector.dao.DAOParquimetroImpl;
-import parquimetros.modelo.inspector.dao.DAOInspector;
-import parquimetros.modelo.inspector.dao.DAOInspectorImpl;
-import parquimetros.modelo.inspector.dao.DAOAutomovil;
-import parquimetros.modelo.inspector.dao.DAOAutomovilImpl;
-import parquimetros.modelo.inspector.dao.datosprueba.DAOParquimetrosDatosPrueba;
-import parquimetros.modelo.inspector.dao.datosprueba.DAOUbicacionesDatosPrueba;
+import parquimetros.modelo.inspector.dao.*;
 import parquimetros.modelo.inspector.dto.EstacionamientoPatenteDTO;
 import parquimetros.modelo.inspector.dto.EstacionamientoPatenteDTOImpl;
 import parquimetros.modelo.inspector.dto.MultaPatenteDTO;
@@ -36,6 +16,12 @@ import parquimetros.modelo.inspector.exception.InspectorNoHabilitadoEnUbicacionE
 import parquimetros.utils.Fechas;
 import parquimetros.utils.Mensajes;
 import parquimetros.utils.Parsing;
+
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 
