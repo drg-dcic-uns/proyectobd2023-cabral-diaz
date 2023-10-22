@@ -4,18 +4,19 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import parquimetros.modelo.ModeloImpl;
-import parquimetros.modelo.beans.InspectorBean;
-import parquimetros.modelo.beans.ParquimetroBean;
-import parquimetros.modelo.beans.UbicacionBean;
+import parquimetros.modelo.beans.*;
 import parquimetros.modelo.inspector.dao.DAOParquimetro;
 import parquimetros.modelo.inspector.dao.DAOParquimetroImpl;
 import parquimetros.modelo.inspector.dao.DAOInspector;
@@ -32,7 +33,9 @@ import parquimetros.modelo.inspector.exception.AutomovilNoEncontradoException;
 import parquimetros.modelo.inspector.exception.ConexionParquimetroException;
 import parquimetros.modelo.inspector.exception.InspectorNoAutenticadoException;
 import parquimetros.modelo.inspector.exception.InspectorNoHabilitadoEnUbicacionException;
+import parquimetros.utils.Fechas;
 import parquimetros.utils.Mensajes;
+import parquimetros.utils.Parsing;
 
 public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 
@@ -67,15 +70,46 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		 */
 		ArrayList<UbicacionBean> ubicaciones = new ArrayList<UbicacionBean>();
 
-		// Datos estáticos de prueba. Quitar y reemplazar por código que recupera las ubicaciones de la B.D. en una lista de UbicacionesBean		 
+		/*// Datos estáticos de prueba. Quitar y reemplazar por código que recupera las ubicaciones de la B.D. en una lista de UbicacionesBean
 		DAOUbicacionesDatosPrueba.poblar();
 		
 		for (UbicacionBean ubicacion : DAOUbicacionesDatosPrueba.datos.values()) {
 			ubicaciones.add(ubicacion);	
 		}
-		// Fin datos estáticos de prueba.
-	
-		return ubicaciones;
+		// Fin datos estáticos de prueba.*/
+
+		String sql = "select * from parquimetros.ubicaciones";
+
+		try {
+
+			java.sql.ResultSet rs = this.consulta(sql);
+
+			String calle;
+			int altura;
+			double tarifa;
+
+			while (rs.next()) {
+
+				calle = rs.getString("calle");
+				altura = Integer.parseInt(rs.getString("altura"));
+				tarifa = Parsing.parseMonto(rs.getString("tarifa"));
+
+				UbicacionBean ubi = new UbicacionBeanImpl();
+				ubi.setCalle(calle);
+				ubi.setAltura(altura);
+				ubi.setTarifa(tarifa);
+
+				ubicaciones.add(ubi);
+			}
+			rs.close();
+			return ubicaciones;
+		} catch (SQLException ex) {
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			ex.printStackTrace();
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
 	}
 
 	@Override
@@ -94,15 +128,45 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 
 		ArrayList<ParquimetroBean> parquimetros = new ArrayList<ParquimetroBean>();
 
-		// Datos estáticos de prueba. Quitar y reemplazar por código que recupera los parquimetros de la B.D. en una lista de ParquimetroBean
+		/*// Datos estáticos de prueba. Quitar y reemplazar por código que recupera los parquimetros de la B.D. en una lista de ParquimetroBean
 		DAOParquimetrosDatosPrueba.poblar(ubicacion);
 		
 		for (ParquimetroBean parquimetro : DAOParquimetrosDatosPrueba.datos.values()) {
 			parquimetros.add(parquimetro);	
 		}
-		// Fin datos estáticos de prueba.
-	
-		return parquimetros;
+		// Fin datos estáticos de prueba.*/
+
+		String sql = "select * from parquimetros.parquimetros as p " +
+				"where p.calle = '"+ubicacion.getCalle() + "'" +
+				"and p.altura ="+ubicacion.getAltura();
+
+		try {
+
+			java.sql.ResultSet rs = this.consulta(sql);
+
+			int id,numero;
+
+			while (rs.next()) {
+
+				id = Integer.parseInt(rs.getString("id_parq"));
+				numero = Integer.parseInt(rs.getString("numero"));
+
+				ParquimetroBean p = new ParquimetroBeanImpl();
+				p.setUbicacion(ubicacion);
+				p.setNumero(numero);
+				p.setId(id);
+
+				parquimetros.add(p);
+
+			}
+			rs.close();
+			return parquimetros;
+		} catch (SQLException ex) {
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
 	}
 
 	@Override
@@ -127,8 +191,76 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		 * @param parquimetro
 		 * @throws ConexionParquimetroException
 		 * @throws Exception
-		 */		
-		
+		 */
+		UbicacionBean ubicacion = parquimetro.getUbicacion();
+		if (Objects.isNull(ubicacion)) {
+			DAOParquimetro dao = new DAOParquimetroImpl(this.conexion);
+			ubicacion = dao.recuperarUbicacion(parquimetro);
+		}
+		String sql = "select dia,turno from parquimetros.asociado_con " +
+				"where legajo = " + inspectorLogueado.getLegajo() +
+				" and calle = '" + ubicacion.getCalle() + "' " +
+				"and altura = "+ ubicacion.getAltura();
+		try {
+
+			java.sql.ResultSet rs = this.consulta(sql);
+
+			String dia,diaHoy,turno,horario;
+			int hora,minuto;
+
+			if (rs.next()) {
+				dia = rs.getString("dia");
+				turno = rs.getString("turno");
+				java.sql.Date hoy = Fechas.hoy();
+				LocalDateTime now = LocalDateTime.now();
+				diaHoy = diaDeLaSemana(now.getDayOfWeek().getValue());
+				hora = now.getHour();
+				minuto = now.getMinute();
+
+				Boolean turnoValido;
+				if (turno.equals("m")){
+					turnoValido = ((hora >= 8) && (minuto >= 0) && (hora <= 13) && (minuto <= 59));
+				} else{
+					turnoValido = ((hora >= 14) && (minuto >= 0) && (hora <= 19) && (minuto <= 59));
+				}
+
+				if( (dia.equals(diaHoy)) && ( turnoValido ) ){
+					this.actualizacion("INSERT INTO accede (legajo, id_parq, fecha, hora)" +
+							"VALUES ( "+
+							inspectorLogueado.getLegajo()+" , "+
+							parquimetro.getId()+ " , "+
+							Fechas.convertirDateAStringDB(hoy)+" , "+
+							"'"+hora+":"+minuto+":00' )");
+				}else{
+					throw new ConexionParquimetroException("El inspector no esta habilitado a acceder a la ubicacion del parquimetro en el dia y hora actual.");
+				}
+			}else{
+				throw new ConexionParquimetroException("El inspector no esta habilitado a acceder al parquimetro.");
+			}
+			rs.close();
+		} catch (SQLException ex) {
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
+	}
+
+	/** Genera las siglas {"lu","ma","mi","ju","vi","sa","do"}
+	 * de acuerdo con el numero del dia de la semana
+	 */
+	private String diaDeLaSemana(int dia){
+		String siglas="";
+		switch (dia){
+			case 7: siglas = "do"; break;
+			case 1: siglas = "lu"; break;
+			case 2: siglas = "ma"; break;
+			case 3: siglas = "mi"; break;
+			case 4: siglas = "ju"; break;
+			case 5: siglas = "vi"; break;
+			case 6: siglas = "sa"; break;
+		}
+		return siglas;
 	}
 
 	@Override

@@ -34,37 +34,40 @@ public class ModeloImpl implements Modelo {
 	{
 		logger.info("Se intenta realizar la siguiente consulta {}",sql);
 		
-		/** TODO: ejecutar la consulta sql recibida como parámetro utilizando 
+		/** TODO: ejecutar la consulta sql recibida como parámetro utilizando
 		*         la propiedad conexion y devolver el resultado en un ResulSet
 		*/
-		/* 
+		ResultSet rs= null;
 		try
-		{ 
-		 
+		{
+			java.sql.Statement stmt = this.conexion.createStatement();
+
+			rs = stmt.executeQuery(sql);
 		}
 		catch (SQLException ex){
 		   logger.error("SQLException: " + ex.getMessage());
 		   logger.error("SQLState: " + ex.getSQLState());
 		   logger.error("VendorError: " + ex.getErrorCode());
 		}
-		*/
-		return null;
-	}	
+		return rs;
+	}
 	
 	@Override
 	public void actualizacion (String sql)
 	{  /** TODO: ejecutar la consulta de actualizacion sql recibida como 
  		*       parámetro utilizando la propiedad conexion 
-		*/  
-		/*
+		*/
 		try
-		{ 	
+		{
+			java.sql.Statement stmt = conexion.createStatement();
+
+			stmt.execute(sql);
+			stmt.close();
 		}
 		catch (SQLException ex) {
 			logger.error("SQLException: " + ex.getMessage());
 			logger.error("SQLState: " + ex.getSQLState());
 			logger.error("VendorError: " + ex.getErrorCode());
 		}
-		*/
 	}	
 }
