@@ -1,6 +1,9 @@
 package parquimetros.modelo.inspector.dao;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,14 +38,33 @@ public class DAOAutomovilImpl implements DAOAutomovil {
 		//  * 0 propaga la excepción recibida (produce una Exception)
  		// 
 	
-		int ultimo = Integer.parseInt(patente.substring(patente.length()-1));
-		
+		/*int ultimo = Integer.parseInt(patente.substring(patente.length()-1));
+
 		if (ultimo == 0) {
 			throw new Exception("Hubo un error en la conexión.");
 		} else if (ultimo == 9) {
-			throw new AutomovilNoEncontradoException(Mensajes.getMessage("DAOAutomovilImpl.recuperarAutomovilPorPatente.AutomovilNoEncontradoException"));			
-		} 
-		// Fin datos estáticos de prueba.		
+			throw new AutomovilNoEncontradoException(Mensajes.getMessage("DAOAutomovilImpl.recuperarAutomovilPorPatente.AutomovilNoEncontradoException"));
+		} */
+		// Fin datos estáticos de prueba.
+
+		String sql="select * from parquimetros.automoviles";
+		logger.info("Se intenta realizar la siguiente consulta {}",sql);
+		ResultSet rs= null;
+		try
+		{
+			java.sql.Statement stmt = this.conexion.createStatement();
+			rs = stmt.executeQuery(sql);
+			if(!rs.next()){
+				throw new AutomovilNoEncontradoException(Mensajes.getMessage("DAOAutomovilImpl.recuperarAutomovilPorPatente.AutomovilNoEncontradoException"));
+			}
+			rs.close();
+		}
+		catch (SQLException ex){
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
 	}
 
 }
