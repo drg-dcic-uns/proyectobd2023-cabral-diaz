@@ -43,6 +43,7 @@ public class ModeloImpl implements Modelo {
 			rs = stmt.executeQuery(sql);
 		}
 		catch (SQLException ex){
+			ex.printStackTrace();
 		   logger.error("SQLException: " + ex.getMessage());
 		   logger.error("SQLState: " + ex.getSQLState());
 		   logger.error("VendorError: " + ex.getErrorCode());
@@ -55,6 +56,7 @@ public class ModeloImpl implements Modelo {
 	{  /** TODO: ejecutar la consulta de actualizacion sql recibida como 
  		*       parámetro utilizando la propiedad conexion 
 		*/
+		logger.info("Se intenta realizar la siguiente actualizacion {}",sql);
 		try
 		{
 			java.sql.Statement stmt = conexion.createStatement();
@@ -63,6 +65,7 @@ public class ModeloImpl implements Modelo {
 			stmt.close();
 		}
 		catch (SQLException ex) {
+			ex.printStackTrace();
 			logger.error("SQLException: " + ex.getMessage());
 			logger.error("SQLState: " + ex.getSQLState());
 			logger.error("VendorError: " + ex.getErrorCode());

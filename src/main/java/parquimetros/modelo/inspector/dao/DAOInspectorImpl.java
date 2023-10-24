@@ -1,6 +1,12 @@
 package parquimetros.modelo.inspector.dao;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +47,8 @@ public class DAOInspectorImpl implements DAOInspector {
 		//  * 9 produce una excepción de InspectorNoAutenticadoException
 		//  * 0 propaga la excepción recibida (produce una Exception)
  		// 
+		
+		/**
 		InspectorBean inspector;
 		
 		int ultimo = Integer.parseInt(legajo.substring(legajo.length()-1));
@@ -60,7 +68,70 @@ public class DAOInspectorImpl implements DAOInspector {
 		
 		return inspector;
 		// Fin datos estáticos de prueba.
+		 * 
+		 */
+		
+		InspectorBean inspector = new InspectorBeanImpl();
+		
+		String pws, nombre, apellido;
+		int dni;
+		
+		String sql="select * from parquimetros.inspectores where legajo = " + legajo;
+		logger.info("Se intenta realizar la siguiente consulta {}",sql);
+		ResultSet rs= null;
+		try
+		{
+			java.sql.Statement stmt = this.conexion.createStatement();
+			rs = stmt.executeQuery(sql);
+			if(!rs.next()){
+				rs.close();
+				throw new InspectorNoAutenticadoException(Mensajes.getMessage("DAOInspectorImpl.autenticar.inspectorNoAutenticado"));
+			}
+			else
+			{
+				pws = rs.getString("password");
+				nombre = rs.getString("nombre");
+				apellido = rs.getString("apellido");
+				dni = rs.getInt("dni");
+				if(pws.equals(getMD5(password)))
+				{
+					inspector.setApellido(apellido);
+					inspector.setDNI(dni);
+					inspector.setLegajo(Integer.parseInt(legajo));
+					inspector.setNombre(nombre);
+					inspector.setPassword(pws);
+				}
+				else
+				{
+					rs.close();
+					throw new InspectorNoAutenticadoException(Mensajes.getMessage("DAOInspectorImpl.autenticar.inspectorNoAutenticado"));
+				}
+			}
+			rs.close();
+		}
+		catch (SQLException ex){
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
+		return inspector;
 	}	
 
+	private static String getMD5(String input) {
+		 try {
+		 MessageDigest md = MessageDigest.getInstance("MD5");
+		 byte[] messageDigest = md.digest(input.getBytes());
+		 BigInteger number = new BigInteger(1, messageDigest);
+		 String hashtext = number.toString(16);
 
+		 while (hashtext.length() < 32) {
+		 hashtext = "0" + hashtext;
+		 }
+		 return hashtext;
+		 }
+		 catch (NoSuchAlgorithmException e) {
+		 throw new RuntimeException(e);
+		 }
+		 }
 }

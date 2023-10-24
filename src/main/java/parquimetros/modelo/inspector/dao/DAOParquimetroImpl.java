@@ -1,18 +1,16 @@
 package parquimetros.modelo.inspector.dao;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import parquimetros.modelo.beans.InspectorBean;
-import parquimetros.modelo.beans.InspectorBeanImpl;
 import parquimetros.modelo.beans.ParquimetroBean;
 import parquimetros.modelo.beans.UbicacionBean;
-import parquimetros.modelo.inspector.dao.datosprueba.DAOParquimetrosDatosPrueba;
+import parquimetros.modelo.beans.UbicacionBeanImpl;
+import parquimetros.utils.Mensajes;
 
 public class DAOParquimetroImpl implements DAOParquimetro {
 
@@ -34,7 +32,33 @@ public class DAOParquimetroImpl implements DAOParquimetro {
 		 */		
 
 		//Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.
-		UbicacionBean ubicacion = DAOParquimetrosDatosPrueba.obtenerUbicacion(parquimetro.getId());
+		
+		UbicacionBean ubicacion = new UbicacionBeanImpl();
+		
+		String sql="select * from parquimetros.parquimetros where id_parq = " + parquimetro.getId();
+		logger.info("Se intenta realizar la siguiente consulta {}",sql);
+		ResultSet rs= null;
+		try
+		{
+			java.sql.Statement stmt = this.conexion.createStatement();
+			rs = stmt.executeQuery(sql);
+			if(!rs.next()){
+				rs.close();
+				throw new Exception(Mensajes.getMessage("DAOParquimetroImpl.recuperarUbicacion"));
+			}
+			else
+			{
+				ubicacion.setAltura(rs.getInt("altura"));
+				ubicacion.setCalle(rs.getString("calle"));
+			}
+			rs.close();
+		}
+		catch (SQLException ex){
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
 		
 		return ubicacion;
 		//Fin datos de prueba 

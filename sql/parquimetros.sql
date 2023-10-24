@@ -191,7 +191,7 @@ CREATE TABLE multa(
 # estacionados = Datos de todos los autos estacionados
 
 CREATE VIEW estacionados AS
-	SELECT calle,altura,patente
+	SELECT calle,altura,patente, fecha_ent, hora_ent
 	FROM estacionamientos NATURAL JOIN parquimetros NATURAL JOIN tarjetas
 	WHERE fecha_sal IS NULL AND hora_sal IS NULL;
 

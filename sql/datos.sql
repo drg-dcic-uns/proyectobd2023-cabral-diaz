@@ -90,10 +90,10 @@ VALUES
 
 INSERT INTO inspectores (legajo, dni, nombre, apellido, password)
 VALUES
-    (1, 11111111, 'Inspector', 'Uno', 'password1'),
-    (2, 22222222, 'Inspector', 'Dos', 'password2'),
-    (3,41099666,'Inspector','Diaz','pass2023'),
-    (4,40065733,'Mario','Gomez','bd-2023');
+    (1, 11111111, 'Inspector', 'Uno', md5('1')),
+    (2, 22222222, 'Inspector', 'Dos', md5('password2')),
+    (3,41099666,'Inspector','Diaz',md5('pass2023')),
+    (4,40065733,'Mario','Gomez',md5('bd-2023'));
 
 INSERT INTO ubicaciones (calle, altura, tarifa)
 VALUES
@@ -122,12 +122,13 @@ VALUES
     (1, 1, '2023-09-18', '10:00:00'),
     (2, 2, '2023-09-18', '11:00:00');
 
-INSERT INTO asociado_con (id_asociado_con, legajo, calle, altura, dia, turno)
+INSERT INTO asociado_con (legajo, calle, altura, dia, turno)
 VALUES
-    (1, 1, 'Calle 1', 100, 'lu', 't'),
-    (2, 2, 'Calle 2', 200, 'ma', 'm'),
-    (3,3,'Calle 3',300,'mi','t'),
-    (4,4,'Avenida 99',600, 'vi','m');
+    (1, 'Calle 1', 100, 'lu', 't'),
+    (1, 'Calle 1', 100, 'ma', 't'),
+    (2, 'Calle 2', 200, 'ma', 'm'),
+    (3,'Calle 3',300,'mi','t'),
+    (4,'Avenida 99',600, 'vi','m');
 
 INSERT INTO multa (numero, fecha, hora, patente, id_asociado_con)
 VALUES

@@ -192,7 +192,7 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 			java.sql.ResultSet rs = this.consulta(sql);
 
 			String dia,turno;
-			int hora,minuto;
+			int hora,minuto,segundo;
 
 			if (rs.next()) {
 				dia = rs.getString("dia");
@@ -201,14 +201,15 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 				LocalDateTime now = LocalDateTime.now();
 				hora = now.getHour();
 				minuto = now.getMinute();
+				segundo = now.getSecond();
 
 				if( turnoValido(turno,dia) ){
-					this.actualizacion("INSERT INTO accede (legajo, id_parq, fecha, hora)" +
+					this.actualizacion("INSERT INTO accede (legajo, id_parq, fecha, hora) " +
 							"VALUES ( "+
 							inspectorLogueado.getLegajo()+" , "+
-							parquimetro.getId()+ " , "+
-							Fechas.convertirDateAStringDB(Fechas.hoy())+" , "+
-							"'"+hora+":"+minuto+":00' )");
+							parquimetro.getId()+ " , '"+
+							Fechas.convertirDateAStringDB(Fechas.hoy())+"' , "+
+							"'"+hora+":"+minuto+":"+segundo+"' )");
 				}else{
 					throw new ConexionParquimetroException("El inspector no esta habilitado a acceder a la ubicacion del parquimetro en el dia y hora actual.");
 				}
@@ -282,8 +283,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		//
 
 		String sql = "select * from parquimetros.estacionados " +
-				"where patente = "+patente+" " +
-				"and calle = "+ubicacion.getCalle()+" " +
+				"where patente = '"+patente+"' " +
+				"and calle = '"+ubicacion.getCalle()+"' " +
 				"and altura = "+ubicacion.getAltura();
 
 		String fechaEntrada, horaEntrada,estado;
@@ -442,9 +443,9 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 																estacionamiento.getHoraEntrada(),
 																String.valueOf(inspectorLogueado.getLegajo()));
 				this.actualizacion("insert into parquimetros.multa(fecha,hora,patente,id_asociado_con) " +
-						"values ( "+ fechaHoy +" ," +
-						horaHoy+", " +
-						patente+", " +
+						"values ( '"+ fechaHoy +"' ,'" +
+						horaHoy+"', '" +
+						patente+"', " +
 						id_asociado_con+")");
 				multas.add(multa);
 				nroMulta++;
