@@ -191,31 +191,23 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 
 			java.sql.ResultSet rs = this.consulta(sql);
 
-			String dia,diaHoy,turno,horario;
+			String dia,turno;
 			int hora,minuto;
 
 			if (rs.next()) {
 				dia = rs.getString("dia");
 				turno = rs.getString("turno");
-				java.sql.Date hoy = Fechas.hoy();
+
 				LocalDateTime now = LocalDateTime.now();
-				diaHoy = diaDeLaSemana(now.getDayOfWeek().getValue());
 				hora = now.getHour();
 				minuto = now.getMinute();
 
-				Boolean turnoValido;
-				if (turno.equals("m")){
-					turnoValido = ((hora >= 8) && (minuto >= 0) && (hora <= 13) && (minuto <= 59));
-				} else{
-					turnoValido = ((hora >= 14) && (minuto >= 0) && (hora <= 19) && (minuto <= 59));
-				}
-
-				if( (dia.equals(diaHoy)) && ( turnoValido ) ){
+				if( turnoValido(turno,dia) ){
 					this.actualizacion("INSERT INTO accede (legajo, id_parq, fecha, hora)" +
 							"VALUES ( "+
 							inspectorLogueado.getLegajo()+" , "+
 							parquimetro.getId()+ " , "+
-							Fechas.convertirDateAStringDB(hoy)+" , "+
+							Fechas.convertirDateAStringDB(Fechas.hoy())+" , "+
 							"'"+hora+":"+minuto+":00' )");
 				}else{
 					throw new ConexionParquimetroException("El inspector no esta habilitado a acceder a la ubicacion del parquimetro en el dia y hora actual.");
@@ -288,9 +280,39 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
  		// 
 		// Utilizaremos el criterio que si es par el último digito de patente entonces está registrado correctamente el estacionamiento.
 		//
-		String fechaEntrada, horaEntrada, estado;
-		
-		if (Integer.parseInt(patente.substring(patente.length()-1)) % 2 == 0) {
+
+		String sql = "select * from parquimetros.estacionados " +
+				"where patente = "+patente+" " +
+				"and calle = "+ubicacion.getCalle()+" " +
+				"and altura = "+ubicacion.getAltura();
+
+		String fechaEntrada, horaEntrada,estado;
+		try {
+
+			java.sql.ResultSet rs = this.consulta(sql);
+
+
+			if(rs.next()){
+				fechaEntrada = rs.getString("fecha_ent");
+				horaEntrada = rs.getString("hora_ent");
+				estado=EstacionamientoPatenteDTO.ESTADO_REGISTRADO;
+			}else{
+				fechaEntrada = "";
+				horaEntrada = "";
+				estado=EstacionamientoPatenteDTO.ESTADO_NO_REGISTRADO;
+			}
+
+			rs.close();
+		} catch (SQLException ex) {
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
+
+
+
+		/*if (Integer.parseInt(patente.substring(patente.length()-1)) % 2 == 0) {
 			estado = EstacionamientoPatenteDTO.ESTADO_REGISTRADO;
 
 			LocalDateTime currentDateTime = LocalDateTime.now();
@@ -301,17 +323,41 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 	        // Formatear la fecha y la hora como cadenas separadas
 	        fechaEntrada = currentDateTime.format(dateFormatter);
 	        horaEntrada = currentDateTime.format(timeFormatter);
-			
+
 		} else {
 			estado = EstacionamientoPatenteDTO.ESTADO_NO_REGISTRADO;
 	        fechaEntrada = "";
 	        horaEntrada = "";
+		}*/
+		// Fin de datos de prueba
+
+
+
+		return new EstacionamientoPatenteDTOImpl(patente,ubicacion.getCalle(),""+ubicacion.getAltura(),fechaEntrada,horaEntrada,estado);
+	}
+
+	private boolean turnoValido(String turno,String diaSemana){
+		boolean valido = false;
+		String diaHoy;
+		int hora;
+		LocalDateTime now = LocalDateTime.now();
+
+		diaHoy = diaDeLaSemana(now.getDayOfWeek().getValue());
+
+		hora = now.getHour();
+
+		if (turno.equals("m")){
+			valido = ((hora >= 8) && (hora <= 13) );
+		} else{
+			valido = ((hora >= 14) && (hora <= 19) );
 		}
 
-		return new EstacionamientoPatenteDTOImpl(patente, ubicacion.getCalle(), String.valueOf(ubicacion.getAltura()), fechaEntrada, horaEntrada, estado);
-		// Fin de datos de prueba
+		if(valido){
+			valido = diaSemana.equals(diaHoy);
+		}
+
+		return valido;
 	}
-	
 
 	@Override
 	public ArrayList<MultaPatenteDTO> generarMultas(ArrayList<String> listaPatentes, 
@@ -339,35 +385,71 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		//
 		// 1) throw InspectorNoHabilitadoEnUbicacionException
 		//
-		ArrayList<MultaPatenteDTO> multas = new ArrayList<MultaPatenteDTO>();
-		int nroMulta = 1;
-		
 		LocalDateTime currentDateTime = LocalDateTime.now();
-        // Definir formatos para la fecha y la hora
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+		// Definir formatos para la fecha y la hora
+		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-        // Formatear la fecha y la hora como cadenas separadas
-        String fechaMulta = currentDateTime.format(dateFormatter);
-        String horaMulta = currentDateTime.format(timeFormatter);
+		// Formatear la fecha y la hora como cadenas separadas
+		String fechaHoy = currentDateTime.format(dateFormatter);
+		String horaHoy = currentDateTime.format(timeFormatter);
+
+		ArrayList<MultaPatenteDTO> multas = new ArrayList<MultaPatenteDTO>();
+
+		ParquimetroBean p = new ParquimetroBeanImpl();
+		p.setUbicacion(ubicacion);
+
+		String sql = "select id_asociado_con,dia,turno from parquimetros.asociado_con " +
+				"where legajo = " + inspectorLogueado.getLegajo() +
+				" and calle = '" + ubicacion.getCalle() + "' " +
+				"and altura = "+ ubicacion.getAltura();
+
+		String dia,turno,id_asociado_con;
+		try {
+			java.sql.ResultSet rs = this.consulta(sql);
+
+			if (rs.next()) {
+				id_asociado_con = rs.getString("id_asociado_con");
+				dia = rs.getString("dia");
+				turno = rs.getString("turno");
+
+				if( !this.turnoValido(turno,dia) ){
+					throw new InspectorNoHabilitadoEnUbicacionException();
+				}
+			}else {
+				throw new InspectorNoHabilitadoEnUbicacionException();
+			}
+			rs.close();
+		} catch (SQLException ex) {
+			logger.error("SQLException: " + ex.getMessage());
+			logger.error("SQLState: " + ex.getSQLState());
+			logger.error("VendorError: " + ex.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + ex.getMessage());
+		}
+
+		int nroMulta = 1;
 		
 		for (String patente : listaPatentes) {
 			
 			EstacionamientoPatenteDTO estacionamiento = this.recuperarEstacionamiento(patente,ubicacion);
-			if (estacionamiento.getEstado() == EstacionamientoPatenteDTO.ESTADO_NO_REGISTRADO) {
+			if (estacionamiento.getEstado().equals(EstacionamientoPatenteDTO.ESTADO_NO_REGISTRADO)) {
 				
 				MultaPatenteDTO multa = new MultaPatenteDTOImpl(String.valueOf(nroMulta), 
 																patente, 
 																ubicacion.getCalle(), 
 																String.valueOf(ubicacion.getAltura()), 
-																fechaMulta, 
-																horaMulta, 
+																estacionamiento.getFechaEntrada(),
+																estacionamiento.getHoraEntrada(),
 																String.valueOf(inspectorLogueado.getLegajo()));
+				this.actualizacion("insert into parquimetros.multa(fecha,hora,patente,id_asociado_con) " +
+						"values ( "+ fechaHoy +" ," +
+						horaHoy+", " +
+						patente+", " +
+						id_asociado_con+")");
 				multas.add(multa);
 				nroMulta++;
 			}
 		}
-		// Fin datos prueba
 		return multas;		
 	}
 }
