@@ -351,7 +351,7 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		if (turno.equals("m")){
 			valido = ((hora >= 8) && (hora <= 13) );
 		} else{
-			valido = ((hora >= 14) && (hora <= 23) ); //TODO CAMBIAR A 19
+			valido = ((hora >= 14) && (hora <= 19) );
 		}
 
 		if(valido){
