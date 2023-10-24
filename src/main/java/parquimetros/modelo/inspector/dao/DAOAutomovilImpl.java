@@ -47,7 +47,7 @@ public class DAOAutomovilImpl implements DAOAutomovil {
 		} */
 		// Fin datos estáticos de prueba.
 
-		String sql="select * from parquimetros.automoviles";
+		String sql="select * from parquimetros.automoviles where patente = '"+patente+"'";
 		logger.info("Se intenta realizar la siguiente consulta {}",sql);
 		ResultSet rs= null;
 		try

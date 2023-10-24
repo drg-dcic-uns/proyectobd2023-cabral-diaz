@@ -19,8 +19,6 @@ import parquimetros.utils.Parsing;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -185,33 +183,20 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 				" and calle = '" + ubicacion.getCalle() + "' " +
 				"and altura = "+ ubicacion.getAltura();
 		try {
+			String dia,turno;
 
 			java.sql.ResultSet rs = this.consulta(sql);
-
-			String dia,turno;
-			int hora,minuto,segundo;
 
 			if (rs.next()) {
 				dia = rs.getString("dia");
 				turno = rs.getString("turno");
-
-                ResultSet rsHora = this.consulta("SELECT NOW()");
-
-                Date fechaHoy = rsHora.getDate(1);
-                Time horaHoy = rsHora.getTime(1);
-
-                LocalTime now = horaHoy.toLocalTime();
-				hora = now.getHour();
-				minuto = now.getMinute();
-				segundo = now.getSecond();
+				
 
 				if( turnoValido(turno,dia) ){
 					this.actualizacion("INSERT INTO accede (legajo, id_parq, fecha, hora) " +
 							"VALUES ( "+
 							inspectorLogueado.getLegajo()+" , "+
-							parquimetro.getId()+ " , '"+
-							Fechas.convertirDateAStringDB(fechaHoy)+"' , "+
-							"'"+hora+":"+minuto+":"+segundo+"' )");
+							parquimetro.getId()+ " , curdate() , curtime() )");
 				}else{
 					throw new ConexionParquimetroException("El inspector no esta habilitado a acceder a la ubicacion del parquimetro en el dia y hora actual.");
 				}
@@ -233,13 +218,13 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 	private String diaDeLaSemana(int dia){
 		String siglas="";
 		switch (dia){
-			case 7: siglas = "do"; break;
-			case 1: siglas = "lu"; break;
-			case 2: siglas = "ma"; break;
-			case 3: siglas = "mi"; break;
-			case 4: siglas = "ju"; break;
-			case 5: siglas = "vi"; break;
-			case 6: siglas = "sa"; break;
+			case 1: siglas = "do"; break;
+			case 2: siglas = "lu"; break;
+			case 3: siglas = "ma"; break;
+			case 4: siglas = "mi"; break;
+			case 5: siglas = "ju"; break;
+			case 6: siglas = "vi"; break;
+			case 7: siglas = "sa"; break;
 		}
 		return siglas;
 	}
@@ -339,20 +324,34 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		return new EstacionamientoPatenteDTOImpl(patente,ubicacion.getCalle(),String.valueOf(ubicacion.getAltura()),fechaEntrada,horaEntrada,estado);
 	}
 
-	private boolean turnoValido(String turno,String diaSemana){
+	private boolean turnoValido(String turno,String diaSemana) throws Exception{
 		boolean valido = false;
 		String diaHoy;
+		Date date=null;
+		Time time=null;
 		int hora;
-		LocalDateTime now = LocalDateTime.now();
+		
+		try {
+			ResultSet rsTime = this.consulta("SELECT NOW()");
+			rsTime.next();
+			date = rsTime.getDate(1);
+			time = rsTime.getTime(1);
+			rsTime.close();
+		} catch (SQLException e) {
+			logger.error("SQLException: " + e.getMessage());
+			logger.error("SQLState: " + e.getSQLState());
+			logger.error("VendorError: " + e.getErrorCode());
+			throw new Exception("Se produjo un error en la consulta: " + e.getMessage());
+		}
 
-		diaHoy = diaDeLaSemana(now.getDayOfWeek().getValue());
+		diaHoy = diaDeLaSemana(date.toLocalDate().getDayOfWeek().getValue());
 
-		hora = now.getHour();
+		hora = time.toLocalTime().getHour();
 
 		if (turno.equals("m")){
 			valido = ((hora >= 8) && (hora <= 13) );
 		} else{
-			valido = ((hora >= 14) && (hora <= 19) );
+			valido = ((hora >= 14) && (hora <= 23) ); //TODO CAMBIAR A 19
 		}
 
 		if(valido){
@@ -392,8 +391,14 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 				" and calle = '" + ubicacion.getCalle() + "' " +
 				"and altura = "+ ubicacion.getAltura();
 
-
 		String dia,turno,id_asociado_con;
+		
+		ResultSet rsTime = this.consulta("SELECT NOW()");
+		rsTime.next();
+		Date fechaHoy = rsTime.getDate(1);
+		Time horaHoy = rsTime.getTime(1);
+		rsTime.close();
+		
 		try {
 			java.sql.ResultSet rs = this.consulta(sql);
 
@@ -437,8 +442,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 																patente, 
 																ubicacion.getCalle(), 
 																String.valueOf(ubicacion.getAltura()), 
-																estacionamiento.getFechaEntrada(),
-																estacionamiento.getHoraEntrada(),
+																Fechas.convertirDateAStringDB(fechaHoy),
+																Fechas.convertirDateAHoraString(horaHoy),
 																String.valueOf(inspectorLogueado.getLegajo()));
 
 				multas.add(multa);
