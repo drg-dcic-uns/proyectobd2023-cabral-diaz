@@ -17,8 +17,9 @@ import parquimetros.utils.Fechas;
 import parquimetros.utils.Mensajes;
 import parquimetros.utils.Parsing;
 
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -178,11 +179,7 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		 * @throws ConexionParquimetroException
 		 * @throws Exception
 		 */
-		UbicacionBean ubicacion = parquimetro.getUbicacion();
-		if (Objects.isNull(ubicacion)) {
-			DAOParquimetro dao = new DAOParquimetroImpl(this.conexion);
-			ubicacion = dao.recuperarUbicacion(parquimetro);
-		}
+		UbicacionBean ubicacion = this.recuperarUbicacion(parquimetro);
 		String sql = "select dia,turno from parquimetros.asociado_con " +
 				"where legajo = " + inspectorLogueado.getLegajo() +
 				" and calle = '" + ubicacion.getCalle() + "' " +
@@ -198,7 +195,12 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 				dia = rs.getString("dia");
 				turno = rs.getString("turno");
 
-				LocalDateTime now = LocalDateTime.now();
+                ResultSet rsHora = this.consulta("SELECT NOW()");
+
+                Date fechaHoy = rsHora.getDate(1);
+                Time horaHoy = rsHora.getTime(1);
+
+                LocalTime now = horaHoy.toLocalTime();
 				hora = now.getHour();
 				minuto = now.getMinute();
 				segundo = now.getSecond();
@@ -208,7 +210,7 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 							"VALUES ( "+
 							inspectorLogueado.getLegajo()+" , "+
 							parquimetro.getId()+ " , '"+
-							Fechas.convertirDateAStringDB(Fechas.hoy())+"' , "+
+							Fechas.convertirDateAStringDB(fechaHoy)+"' , "+
 							"'"+hora+":"+minuto+":"+segundo+"' )");
 				}else{
 					throw new ConexionParquimetroException("El inspector no esta habilitado a acceder a la ubicacion del parquimetro en el dia y hora actual.");
@@ -334,7 +336,7 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 
 
 
-		return new EstacionamientoPatenteDTOImpl(patente,ubicacion.getCalle(),""+ubicacion.getAltura(),fechaEntrada,horaEntrada,estado);
+		return new EstacionamientoPatenteDTOImpl(patente,ubicacion.getCalle(),String.valueOf(ubicacion.getAltura()),fechaEntrada,horaEntrada,estado);
 	}
 
 	private boolean turnoValido(String turno,String diaSemana){
@@ -381,29 +383,15 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		 *      Importante: Para acceder a la B.D. utilice la propiedad this.conexion (de clase Connection) 
 		 *      que se hereda al extender la clase ModeloImpl.      
 		 */
-		
-		//Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.
-		//
-		// 1) throw InspectorNoHabilitadoEnUbicacionException
-		//
-		LocalDateTime currentDateTime = LocalDateTime.now();
-		// Definir formatos para la fecha y la hora
-		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-
-		// Formatear la fecha y la hora como cadenas separadas
-		String fechaHoy = currentDateTime.format(dateFormatter);
-		String horaHoy = currentDateTime.format(timeFormatter);
 
 		ArrayList<MultaPatenteDTO> multas = new ArrayList<MultaPatenteDTO>();
 
-		ParquimetroBean p = new ParquimetroBeanImpl();
-		p.setUbicacion(ubicacion);
 
 		String sql = "select id_asociado_con,dia,turno from parquimetros.asociado_con " +
 				"where legajo = " + inspectorLogueado.getLegajo() +
 				" and calle = '" + ubicacion.getCalle() + "' " +
 				"and altura = "+ ubicacion.getAltura();
+
 
 		String dia,turno,id_asociado_con;
 		try {
@@ -434,7 +422,17 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 			
 			EstacionamientoPatenteDTO estacionamiento = this.recuperarEstacionamiento(patente,ubicacion);
 			if (estacionamiento.getEstado().equals(EstacionamientoPatenteDTO.ESTADO_NO_REGISTRADO)) {
-				
+				String sqlMulta="insert into parquimetros.multa(fecha,hora,patente,id_asociado_con) " +
+						"VALUES (curdate(),curtime(), ? , ? )";
+				PreparedStatement stmMulta = this.conexion.prepareStatement(sqlMulta, Statement.RETURN_GENERATED_KEYS);
+				stmMulta.setString(1,patente);
+				stmMulta.setString(2,id_asociado_con);
+				stmMulta.executeUpdate();
+
+				ResultSet rsMulta = stmMulta.getGeneratedKeys();
+				rsMulta.next();
+				nroMulta = rsMulta.getInt(1);
+
 				MultaPatenteDTO multa = new MultaPatenteDTOImpl(String.valueOf(nroMulta), 
 																patente, 
 																ubicacion.getCalle(), 
@@ -442,13 +440,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 																estacionamiento.getFechaEntrada(),
 																estacionamiento.getHoraEntrada(),
 																String.valueOf(inspectorLogueado.getLegajo()));
-				this.actualizacion("insert into parquimetros.multa(fecha,hora,patente,id_asociado_con) " +
-						"values ( '"+ fechaHoy +"' ,'" +
-						horaHoy+"', '" +
-						patente+"', " +
-						id_asociado_con+")");
+
 				multas.add(multa);
-				nroMulta++;
 			}
 		}
 		return multas;		
