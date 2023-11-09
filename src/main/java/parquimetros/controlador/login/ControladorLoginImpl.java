@@ -115,7 +115,6 @@ public class ControladorLoginImpl implements ControladorLogin {
 		}		
 	}
 
-
 	@Override
 	public void ingresarComoParquimetro() {
 		logger.debug(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.logger"), PARQUIMETRO);
@@ -123,20 +122,34 @@ public class ControladorLoginImpl implements ControladorLogin {
 		UsuarioBean usuario = this.modelo.obtenerUsuario(PARQUIMETRO);
 
 		if (usuario != null) {
+            ModeloParquimetro modeloParquimetro = new ModeloParquimetroImpl();
 			
-			logger.debug(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.usuarioNotNull"),usuario.getUsername(), usuario.getPassword());
+			if (modeloParquimetro.conectar(usuario.getUsername(), usuario.getPassword())) {
 			
-			ModeloParquimetro modeloParquimetro = new ModeloParquimetroImpl();
-			VentanaParquimetro ventanaParquimetro = new VentanaParquimetroImpl();
+				try {
+			
+					logger.debug(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.usuarioNotNull"),usuario.getUsername(), usuario.getPassword());			
+					
+					VentanaParquimetro ventanaParquimetro = new VentanaParquimetroImpl();
 
-			ControladorParquimetro controladorParquimetro = new ControladorParquimetroImpl(ventanaParquimetro, modeloParquimetro);
+					ControladorParquimetro controladorParquimetro = new ControladorParquimetroImpl(ventanaParquimetro, modeloParquimetro);
 						
-			logger.info(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.ejecutar"));
-			controladorParquimetro.ejecutar();
+					logger.info(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.ejecutar"));
+					controladorParquimetro.ejecutar();
 						
-			logger.info(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.eliminarVentana"));					
-			this.ventana.eliminarVentana();
-
+					logger.info(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.eliminarVentana"));					
+					this.ventana.eliminarVentana();
+					
+                 } catch (Exception e) {					
+					 logger.error(Mensajes.getMessage("ControladorLoginImpl.ingresarComoInspector.Exception"));
+					 this.ventana.informar(Mensajes.getMessage("ControladorLoginImpl.ingresarComoInspector.Exception") + e.getMessage());					
+				 }
+				
+			} else
+				{
+					logger.error(Mensajes.getMessage("ControladorLoginImpl.ingresarComoInspector.errorConectar"));
+					this.ventana.informar(Mensajes.getMessage("ControladorLoginImpl.ingresarComoInspector.errorConectar"));
+				}
 		} else {
 			
 			logger.error(Mensajes.getMessage("ControladorLoginImpl.ingresarComoParquimetro.errorObtenerUsuarioLogger"), PARQUIMETRO);

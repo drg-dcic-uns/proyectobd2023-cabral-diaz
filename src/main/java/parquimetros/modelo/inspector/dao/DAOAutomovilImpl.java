@@ -23,7 +23,8 @@ public class DAOAutomovilImpl implements DAOAutomovil {
 	@Override
 	public void verificarPatente(String patente) throws AutomovilNoEncontradoException, Exception {
 		/** 
-		 * TODO Debe verificar que exista la patente en la tabla automoviles. 
+		 * TODO [DONE]
+		 * 		Debe verificar que exista la patente en la tabla automoviles.
 		 * 		Deberá generar una excepción AutomovilNoEncontradoException en caso de no encontrarlo. 
 		 *      Si hay algún error en la consulta o en la conexión deberá propagar la excepción.    
 		 *       

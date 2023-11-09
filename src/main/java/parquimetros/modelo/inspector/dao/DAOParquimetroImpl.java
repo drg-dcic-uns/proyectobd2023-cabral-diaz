@@ -25,7 +25,8 @@ public class DAOParquimetroImpl implements DAOParquimetro {
 	@Override
 	public UbicacionBean recuperarUbicacion(ParquimetroBean parquimetro) throws Exception {
 		/**
-		 * TODO Recuperar  de la B.D. la ubicación de un parquimetro a patir de su ID
+		 * TODO [DONE]
+		 * 		Recuperar  de la B.D. la ubicación de un parquimetro a patir de su ID
 		 * 
 		 *      Importante: Para acceder a la B.D. utilice la propiedad this.conexion (de clase Connection) 
 		 *      que se inicializa en el constructor.   

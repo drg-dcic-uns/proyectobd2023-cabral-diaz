@@ -28,7 +28,8 @@ public class DAOInspectorImpl implements DAOInspector {
 	@Override
 	public InspectorBean autenticar(String legajo, String password) throws InspectorNoAutenticadoException, Exception {
 		/** 
-		 * TODO Código que autentica que exista en la B.D. un legajo de inspector y que el password corresponda a ese legajo
+		 * TODO [DONE]
+		 * 		Código que autentica que exista en la B.D. un legajo de inspector y que el password corresponda a ese legajo
 		 *      (recuerde que el password guardado en la BD está encriptado con MD5) 
 		 *      En caso exitoso deberá retornar el inspectorBean.
 		 *      Si la autenticación no es exitosa porque el legajo no es válido o el password es incorrecto

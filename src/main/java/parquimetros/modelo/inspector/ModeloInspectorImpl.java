@@ -46,7 +46,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		
 		logger.info(Mensajes.getMessage("ModeloInspectorImpl.recuperarUbicaciones.logger"));
 		/** 
-		 * TODO Debe retornar una lista de UbicacionesBean con todas las ubicaciones almacenadas en la B.D. 
+		 * TODO [DONE]
+		 * 		Debe retornar una lista de UbicacionesBean con todas las ubicaciones almacenadas en la B.D.
 		 *      Debería propagar una excepción si hay algún error en la consulta. 
 		 *      
 		 *      Importante: Para acceder a la B.D. utilice la propiedad this.conexion (de clase Connection) 
@@ -103,7 +104,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		logger.info(Mensajes.getMessage("ModeloInspectorImpl.recuperarParquimetros.logger"),ubicacion.toString());
 		
 		/** 
-		 * TODO Debe retornar una lista de ParquimetroBean con todos los parquimetros que corresponden a una ubicación.
+		 * TODO [DONE]
+		 * 		Debe retornar una lista de ParquimetroBean con todos los parquimetros que corresponden a una ubicación.
 		 * 		Debería propagar una excepción si hay algún error en la consulta.
 		 *            
 		 *      Importante: Para acceder a la B.D. utilice la propiedad this.conexion (de clase Connection) 
@@ -160,7 +162,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
   
 		logger.info(Mensajes.getMessage("ModeloInspectorImpl.conectarParquimetro.logger"),parquimetro.toString());
 		
-		/** TODO Simula la conexión al parquímetro con el inspector que se encuentra logueado en el momento 
+		/** TODO [DONE]
+		 * 		 Simula la conexión al parquímetro con el inspector que se encuentra logueado en el momento
 		 *       en que se ejecuta la acción. 
 		 *       
 		 *       Debe verificar si el inspector está habilitado a acceder a la ubicación del parquímetro 
@@ -252,7 +255,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 
 		logger.info(Mensajes.getMessage("ModeloInspectorImpl.recuperarEstacionamiento.logger"),patente,ubicacion.getCalle(),ubicacion.getAltura());
 		/**
-		 * TODO Verifica si existe un estacionamiento abierto registrado la patente en la ubicación, y
+		 * TODO [DONE]
+		 * 		Verifica si existe un estacionamiento abierto registrado la patente en la ubicación, y
 		 *	    de ser asi retorna un EstacionamientoPatenteDTO con estado Registrado (EstacionamientoPatenteDTO.ESTADO_REGISTRADO), 
 		 * 		y caso contrario sale con estado No Registrado (EstacionamientoPatenteDTO.ESTADO_NO_REGISTRADO).
 		 * 
@@ -372,7 +376,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		logger.info(Mensajes.getMessage("ModeloInspectorImpl.generarMultas.logger"),listaPatentes.size());		
 		
 		/** 
-		 * TODO Primero verificar si el inspector puede realizar una multa en esa ubicacion el dia y hora actual 
+		 * TODO [DONE]
+		 * 		Primero verificar si el inspector puede realizar una multa en esa ubicacion el dia y hora actual
 		 *      segun la tabla asociado_con. Sino puede deberá producir una excepción de 
 		 *      InspectorNoHabilitadoEnUbicacionException. 
 		 *            
