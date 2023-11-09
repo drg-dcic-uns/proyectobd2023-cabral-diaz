@@ -184,25 +184,24 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 				"and altura = "+ ubicacion.getAltura();
 		try {
 			String dia,turno;
+			boolean valido = false;
 
 			java.sql.ResultSet rs = this.consulta(sql);
 
-			if (rs.next()) {
+			while (rs.next() && !valido) {
 				dia = rs.getString("dia");
 				turno = rs.getString("turno");
-				
-
-				if( turnoValido(turno,dia) ){
+				valido = turnoValido(turno,dia); 
+			}
+			
+				if(valido){
 					this.actualizacion("INSERT INTO accede (legajo, id_parq, fecha, hora) " +
 							"VALUES ( "+
 							inspectorLogueado.getLegajo()+" , "+
 							parquimetro.getId()+ " , curdate() , curtime() )");
 				}else{
-					throw new ConexionParquimetroException("El inspector no esta habilitado a acceder a la ubicacion del parquimetro en el dia y hora actual.");
+					throw new ConexionParquimetroException("El inspector no esta habilitado a acceder a este parquimetro.");
 				}
-			}else{
-				throw new ConexionParquimetroException("El inspector no esta habilitado a acceder al parquimetro.");
-			}
 			rs.close();
 		} catch (SQLException ex) {
 			logger.error("SQLException: " + ex.getMessage());
@@ -218,14 +217,15 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 	private String diaDeLaSemana(int dia){
 		String siglas="";
 		switch (dia){
-			case 1: siglas = "do"; break;
-			case 2: siglas = "lu"; break;
-			case 3: siglas = "ma"; break;
-			case 4: siglas = "mi"; break;
-			case 5: siglas = "ju"; break;
-			case 6: siglas = "vi"; break;
-			case 7: siglas = "sa"; break;
+			case 7: siglas = "do"; break;
+			case 1: siglas = "lu"; break;
+			case 2: siglas = "ma"; break;
+			case 3: siglas = "mi"; break;
+			case 4: siglas = "ju"; break;
+			case 5: siglas = "vi"; break;
+			case 6: siglas = "sa"; break;
 		}
+		System.out.println(siglas);
 		return siglas;
 	}
 
@@ -358,6 +358,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 			valido = diaSemana.equals(diaHoy);
 		}
 
+		System.out.println(valido + "valido");
+		System.out.println(diaSemana + "diaHoy");
 		return valido;
 	}
 
