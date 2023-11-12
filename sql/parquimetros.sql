@@ -324,7 +324,21 @@ delimiter ;
 
 
 #-----------------------------------------------------------------------------------------------
+#Creacion de triggers
 
+delimiter !
+CREATE TRIGGER saldo_update
+AFTER UPDATE ON tarjetas
+FOR EACH ROW
+BEGIN
+IF OLD.saldo < NEW.saldo
+THEN
+	INSERT INTO recargas (id_tarjeta, fecha, hora, saldo_anterior, saldo_posterior)
+	VALUES(OLD.id_tarjeta, curdate(), curtime(),OLD.saldo, NEW.saldo);
+END; !
+delimiter ;
+
+#-----------------------------------------------------------------------------------------------
 #creacion de usuarios y privilegios
 
 #creacion del usuario admin
