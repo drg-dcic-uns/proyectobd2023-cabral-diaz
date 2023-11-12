@@ -335,6 +335,7 @@ IF OLD.saldo < NEW.saldo
 THEN
 	INSERT INTO recargas (id_tarjeta, fecha, hora, saldo_anterior, saldo_posterior)
 	VALUES(OLD.id_tarjeta, curdate(), curtime(),OLD.saldo, NEW.saldo);
+END IF;
 END; !
 delimiter ;
 
