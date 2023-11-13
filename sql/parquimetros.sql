@@ -212,6 +212,7 @@ BEGIN
 	 DECLARE tarifa_parquimetro DECIMAL(5,2);
 	 DECLARE saldo_actual_tarjeta DECIMAL(5,2);
 	 DECLARE tiempo_minutos INTEGER;
+	 DECLARE minutos_disponibles VARCHAR(32);
 	 DECLARE ahora TIMESTAMP;
 	 DECLARE fecha_actual DATE;
 	 DECLARE hora_actual TIME;
@@ -300,13 +301,14 @@ ELSE
         FROM tarjetas AS t NATURAL JOIN tipos_tarjeta AS tt WHERE t.id_tarjeta = id_tarjeta;
         SELECT tarifa INTO tarifa_parquimetro
         FROM parquimetros AS p NATURAL JOIN ubicaciones WHERE p.id_parq = id_parq;
-        SELECT (saldo_actual_tarjeta / (tarifa_parquimetro * (1 - descuento_tarjeta))) INTO tiempo_minutos;
+        SELECT IF(descuento_tarjeta = 1, 'ilimitados', saldo_actual_tarjeta / (tarifa_parquimetro * (1 - descuento_tarjeta))) 
+        	INTO minutos_disponibles;
         INSERT INTO estacionamientos (id_tarjeta, id_parq, fecha_ent, fecha_sal, hora_ent, hora_sal)
         VALUES (id_tarjeta, id_parq, fecha_actual, NULL, hora_actual, NULL);
         SELECT
         'APERTURA' AS tipo_operacion,
         'La operacion se realizo con exito' AS resultado,
-        tiempo_minutos AS minutos_disponibles,
+        minutos_disponibles AS minutos_disponibles,
         fecha_actual AS fecha_ent,
         hora_actual AS hora_ent;
     ELSE
