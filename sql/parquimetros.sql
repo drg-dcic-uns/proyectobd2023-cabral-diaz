@@ -301,7 +301,7 @@ ELSE
         FROM tarjetas AS t NATURAL JOIN tipos_tarjeta AS tt WHERE t.id_tarjeta = id_tarjeta;
         SELECT tarifa INTO tarifa_parquimetro
         FROM parquimetros AS p NATURAL JOIN ubicaciones WHERE p.id_parq = id_parq;
-        SELECT IF(descuento_tarjeta = 1, 'ilimitados', saldo_actual_tarjeta / (tarifa_parquimetro * (1 - descuento_tarjeta))) 
+        SELECT IF(descuento_tarjeta = 1, 'ilimitados', FLOOR(saldo_actual_tarjeta / (tarifa_parquimetro * (1 - descuento_tarjeta)))) 
         	INTO minutos_disponibles;
         INSERT INTO estacionamientos (id_tarjeta, id_parq, fecha_ent, fecha_sal, hora_ent, hora_sal)
         VALUES (id_tarjeta, id_parq, fecha_actual, NULL, hora_actual, NULL);
