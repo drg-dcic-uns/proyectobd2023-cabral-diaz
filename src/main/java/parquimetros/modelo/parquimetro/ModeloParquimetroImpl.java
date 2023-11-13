@@ -308,7 +308,7 @@ public class ModeloParquimetroImpl extends ModeloImpl implements ModeloParquimet
 					throw new ParquimetroNoExisteException();
 				}
 
-				if(resultado.equals("SQLEXCEPTION!, transacción abortada")){
+				if(resultado.equals("SQLEXCEPTION!, transaccion abortada")){
 					throw new SQLException();
 				}
 

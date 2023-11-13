@@ -227,7 +227,7 @@ BEGIN
     GET DIAGNOSTICS CONDITION 1  codigo_MYSQL= MYSQL_ERRNO,
                                 codigo_SQL= RETURNED_SQLSTATE,
                                 mensaje_error= MESSAGE_TEXT;
-    SELECT 'SQLEXCEPTION!, transacción abortada' AS resultado, codigo_MySQL, codigo_SQL,  mensaje_error;
+    SELECT 'SQLEXCEPTION!, transaccion abortada' AS resultado, codigo_MySQL, codigo_SQL,  mensaje_error;
     ROLLBACK;
     END;
     SELECT now() INTO ahora;
@@ -260,10 +260,12 @@ THEN
     FROM tarjetas AS t NATURAL JOIN tipos_tarjeta AS tt WHERE t.id_tarjeta = id_tarjeta;
     SELECT e.fecha_ent INTO fecha_ent_automovil
     FROM estacionamientos AS e WHERE e.id_parq = id_parq
+    AND e.id_tarjeta = id_tarjeta
     AND e.hora_sal IS NULL
     AND e.fecha_sal IS NULL;
     SELECT e.hora_ent INTO hora_ent_automovil
     FROM estacionamientos AS e WHERE e.id_parq = id_parq
+    AND e.id_tarjeta = id_tarjeta
     AND e.hora_sal IS NULL
     AND e.fecha_sal IS NULL;
     SELECT tarifa INTO tarifa_parquimetro
