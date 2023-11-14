@@ -212,6 +212,7 @@ BEGIN
 	 DECLARE tarifa_parquimetro DECIMAL(5,2);
 	 DECLARE saldo_actual_tarjeta DECIMAL(5,2);
 	 DECLARE tiempo_minutos INTEGER;
+	 DECLARE id_parq_abierto INTEGER;
 	 DECLARE minutos_disponibles VARCHAR(32);
 	 DECLARE ahora TIMESTAMP;
 	 DECLARE fecha_actual DATE;
@@ -250,7 +251,6 @@ IF NOT EXISTS (
 IF EXISTS (
     SELECT * FROM estacionamientos AS e
     WHERE e.id_tarjeta = id_tarjeta
-    AND e.id_parq = id_parq
     AND e.hora_sal IS NULL
     AND e.fecha_sal IS NULL
     )
@@ -258,40 +258,33 @@ THEN
     # Operacion de CLAUSURA
     SELECT descuento INTO descuento_tarjeta
     FROM tarjetas AS t NATURAL JOIN tipos_tarjeta AS tt WHERE t.id_tarjeta = id_tarjeta;
-    SELECT e.fecha_ent INTO fecha_ent_automovil
-    FROM estacionamientos AS e WHERE e.id_parq = id_parq
-    AND e.id_tarjeta = id_tarjeta
-    AND e.hora_sal IS NULL
-    AND e.fecha_sal IS NULL;
-    SELECT e.hora_ent INTO hora_ent_automovil
-    FROM estacionamientos AS e WHERE e.id_parq = id_parq
-    AND e.id_tarjeta = id_tarjeta
-    AND e.hora_sal IS NULL
-    AND e.fecha_sal IS NULL;
+	SELECT e.id_parq,e.fecha_ent,e.hora_ent INTO id_parq_abierto,fecha_ent_automovil,hora_ent_automovil
+	FROM estacionamientos AS e
+	WHERE e.id_tarjeta = id_tarjeta
+	AND e.fecha_sal IS NULL
+	AND e.hora_sal IS NULL;
     SELECT tarifa INTO tarifa_parquimetro
-    FROM parquimetros AS p NATURAL JOIN ubicaciones WHERE p.id_parq = id_parq;
+    FROM parquimetros AS p NATURAL JOIN ubicaciones 
+	WHERE p.id_parq = id_parq_abierto;
     UPDATE estacionamientos AS e SET fecha_sal = fecha_actual,hora_sal = hora_actual
-    WHERE e.id_parq = id_parq
+    WHERE e.id_parq = id_parq_abierto
     AND e.id_tarjeta = id_tarjeta
     AND e.hora_sal IS NULL
     AND e.fecha_sal IS NULL;
     SELECT FLOOR(TIME_TO_SEC(TIMEDIFF(ahora, TIMESTAMP(fecha_ent_automovil,hora_ent_automovil))) / 60) INTO tiempo_minutos;
     SELECT t.saldo INTO saldo_actual_tarjeta FROM tarjetas AS t WHERE t.id_tarjeta = id_tarjeta;
-    UPDATE tarjetas AS t SET t.saldo = (saldo_actual_tarjeta - (tiempo_minutos * tarifa_parquimetro * (1 - descuento_tarjeta)))
+	SELECT GREATEST((saldo_actual_tarjeta - (tiempo_minutos * tarifa_parquimetro * (1 - descuento_tarjeta))),-999.99)
+	INTO saldo_actual_tarjeta;
+    UPDATE tarjetas AS t SET t.saldo = saldo_actual_tarjeta
     WHERE t.id_tarjeta = id_tarjeta;
     SELECT 'CIERRE' AS tipo_operacion,
         'La operacion se realizo con exito' AS resultado,
         tiempo_minutos AS minutos_transcurridos,
-        t.saldo,
-        e.fecha_ent,
-        e.fecha_sal,
-        e.hora_ent,
-        e.hora_sal
-    FROM tarjetas AS t NATURAL JOIN estacionamientos AS e
-    WHERE t.id_tarjeta = id_tarjeta
-    AND e.id_parq = id_parq
-    AND e.hora_sal = hora_actual
-    AND e.fecha_sal = fecha_actual;
+        saldo_actual_tarjeta,
+        fecha_ent_automovil,
+        fecha_actual,
+        hora_ent_automovil,
+        hora_actual;
 ELSE
     # Operacion de apertura
     SELECT t.saldo INTO saldo_actual_tarjeta
