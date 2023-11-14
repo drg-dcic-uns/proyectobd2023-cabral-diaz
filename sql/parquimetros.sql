@@ -280,11 +280,11 @@ THEN
     SELECT 'CIERRE' AS tipo_operacion,
         'La operacion se realizo con exito' AS resultado,
         tiempo_minutos AS minutos_transcurridos,
-        saldo_actual_tarjeta,
-        fecha_ent_automovil,
-        fecha_actual,
-        hora_ent_automovil,
-        hora_actual;
+        saldo_actual_tarjeta AS saldo,
+        fecha_ent_automovil AS fecha_ent,
+        fecha_actual AS fecha_sal,
+        hora_ent_automovil AS hora_ent,
+        hora_actual AS hora_sal;
 ELSE
     # Operacion de apertura
     SELECT t.saldo INTO saldo_actual_tarjeta
