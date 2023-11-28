@@ -18,7 +18,6 @@ import parquimetros.utils.Mensajes;
 import parquimetros.utils.Parsing;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -363,7 +362,8 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 		}
 
 		System.out.println(valido + "valido");
-		System.out.println(diaSemana + "diaHoy");
+		System.out.println(diaSemana + "diaSemana");
+		System.out.println(diaHoy + "diaHoy");
 		return valido;
 	}
 
@@ -398,26 +398,28 @@ public class ModeloInspectorImpl extends ModeloImpl implements ModeloInspector {
 				" and calle = '" + ubicacion.getCalle() + "' " +
 				"and altura = "+ ubicacion.getAltura();
 
-		String dia,turno,id_asociado_con;
+		String dia,turno,id_asociado_con = null;
 		
 		ResultSet rsTime = this.consulta("SELECT NOW()");
 		rsTime.next();
 		Date fechaHoy = rsTime.getDate(1);
 		Time horaHoy = rsTime.getTime(1);
+		boolean valido = false;
 		rsTime.close();
 		
 		try {
 			java.sql.ResultSet rs = this.consulta(sql);
-
-			if (rs.next()) {
+			while(!valido && rs.next()) {
 				id_asociado_con = rs.getString("id_asociado_con");
 				dia = rs.getString("dia");
 				turno = rs.getString("turno");
 
-				if( !this.turnoValido(turno,dia) ){
-					throw new InspectorNoHabilitadoEnUbicacionException();
+				if( this.turnoValido(turno,dia) ){
+					valido = true;
 				}
-			}else {
+			}
+			if(!valido) {
+				rs.close();
 				throw new InspectorNoHabilitadoEnUbicacionException();
 			}
 			rs.close();
